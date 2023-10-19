@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>exp2</title>
+</head>
+
+<body>
+<pre><code>
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import datetime as dt
+import plotly.express as px
+import plotly.graph_objects as go
+
+df_india = pd.read_csv("covid_19_india.csv")
+df_india.head()
+
+"Getting numeric column detials "
+df_india.describe()
+
+"Getting information of null values in Dataset"
+df_india.isna().sum()
+
+"finding unique values from 'State/UnionTerritory' column"
+df_india['State/UnionTerritory'].unique(),df_india['State/UnionTerritory'].nunique()
+
+"Changing the format of date"
+df_india['Date'] = pd.to_datetime(df_india['Date'])
+df_india['Date'] = df_india['Date'].dt.strftime('%d-%m-%Y')
+
+"Removing unwanted columns from dataset using 'drop'."
+df_india.drop(['Time','ConfirmedIndianNational','ConfirmedForeignNational'],axis = 1,inplace = True)
+
+"Identifying active cases , We counted the values by using values in confirmed, cured, deaths column"
+df_india['Active'] = df_india['Confirmed'] - df_india['Cured'] - df_india['Deaths']
+df_india.tail()
+
+"using pivot function to find cured , deaths , confirmed cases State wise"
+statewise = pd.pivot_table(df_india,values=['Cured','Deaths','Confirmed'],index='State/UnionTerritory',aggfunc='max',margins=True)
+statewise.head()
+
+def topTen(status):
+  df_10 = df_india.nlargest(10,[status])
+  df_10 = df_india.groupby(['State/UnionTerritory'])[status].max().sort_values(ascending=False).reset_index()
+  df_top = df_10.nlargest(10,status)
+  return df_top
+
+"Top 10 states with most Active cases"
+df_active = topTen('Active')
+df_active
+
+"Top 10 states with most deaths cases"
+df_deaths = topTen('Deaths')
+df_deaths
+
+"Finding recovery rate and deathrate"
+statewise['Recoveryrate'] = statewise['Cured']*100/statewise['Confirmed']
+statewise['Deathrate'] = statewise['Deaths']*100/statewise['Confirmed']
+statewise.head()
+
+"Correlation amongs the columns"
+statewise.corr()
+
+confirm= df_india['Confirmed'].sum()
+cured = df_india['Cured'].sum()
+deaths= df_india['Deaths'].sum()
+active= df_india['Active'].sum()
+print('Total Confirmed cases =',confirm)
+print('Total Cured cases =',cured)
+print('Total Active cases =',active)
+print('Total Death cases =',deaths)
+
+"Barplot for Confirmed , Deaths , Cured , Active"
+fig = plt.figure(figsize=(5,4))
+barplot = sns.barplot(x=['Confirmed','Cured','Deaths','active'],y=[confirm,cured,deaths,active])
+barplot.set_yticklabels(labels=(barplot.get_yticks()*1).astype(int))
+plt.show()
+
+"Piechart for 'Confirmed','Cured',Deaths & 'Active'"
+fig = plt.figure(figsize=(7,5))
+df_keys = [confirm,cured,deaths,active]
+plt.pie(df_keys,labels = df_keys, explode = (0.02,0.02,0.1,0.02), autopct = '%.0f%%')
+plt.legend(['Confirmed','Cured','Deaths','Active'])
+
+
+"Pie Chart Of 10 Top states with Active Cases"
+fig = plt.figure(figsize=(10,8))
+df_active.groupby(["State/UnionTerritory"]).sum()["Active"].plot(kind='pie',rot=90,explode=(0.05,0.02,0.03,0.04,0.04,0.05,0.1,0.04,0.09,0.04),autopct='%1.0f%%')
+plt.title('Top 10 states with most Active cases',size=20)
+plt.show()
+
+"Bar graph with top 10 states with most Death cases"
+df_deaths = df_india.groupby('State/UnionTerritory').max()[['Deaths','Date']].sort_values(by='Deaths',ascending=False).reset_index()
+fig = plt.figure(figsize=(20,10))
+plot1 = sns.barplot(data = df_deaths.iloc[:10],y='Deaths',x='State/UnionTerritory')
+plt.title('Top 10 states with most death cases', size=20)
+plt.xlabel('states')
+plt.ylabel('Deaths')
+plt.show()
+
+" Top 5 Most affected states"
+fig = plt.figure(figsize=(6,5))
+plot = sns.lineplot(data = df_india[df_india['State/UnionTerritory'].isin(['Maharashtra','Karnataka','Tamil Nadu','Delhi','Uttar Pradesh'])],x='Date',y='Active',hue = 'State/UnionTerritory',size='State/UnionTerritory')
+plt.title('5 most affected states',size=13)
+plt.show()
+
+"Correlation Heatmap"
+fig = plt.figure(figsize=(4,3))
+sns.heatmap(df_india.corr(),cmap="Blues")
+plt.title('Correlation Heatmap',size=13)
+plt.show()
+
+vaccine_df = pd.read_csv("covid_vaccine_statewise.csv")
+vaccine_df.head()
+
+vaccine_df.rename(columns={'Updated On' : 'Vaccine_Date'}, inplace = True)
+
+
+vaccine_df.describe()
+
+vaccine = vaccine_df.drop(columns=['18-44 Years (Doses Administered)','60+ Years (Doses Administered)','45-60 Years (Doses Administered)','Sputnik V (Doses Administered)','AEFI'],axis = 1)
+
+male = vaccine['Male(Individuals Vaccinated)'].sum()
+female = vaccine['Female(Individuals Vaccinated)'].sum()
+labels = ['Male','Female']
+x = np.array([male,female])
+plt.pie(x,labels = labels,autopct='%.1f%%')
+plt.title('Male vs Female vaccination')
+plt.legend()
+plt.show()
+
+vaccine1 = vaccine_df[vaccine_df.State != 'India']
+vaccine1.rename(columns={'Total Individuals Vaccinated' : 'Total'},inplace = True)
+vaccine1.head()
+
+vaccine1.rename(columns={'Total Individuals Vaccinated' : 'Total'},inplace = True)
+max_vac = vaccine1.groupby('State')['Total'].sum().to_frame()
+max_vac = max_vac.sort_values('Total' , ascending = False)[:5]
+max_vac.head()
+
+"Vaccination Bar Graph"
+fig = plt.figure(figsize=(6,3))
+plt.title("Top 5 Vaccinated States In india",size = 13)
+x = sns.barplot(data = max_vac.iloc[:10],y = max_vac.Total, x = max_vac.index, linewidth = 2)
+plt.xlabel('States')
+plt.ylabel("Vaccination")
+plt.show()
+</pre></code>
+</body>
+
+</html>

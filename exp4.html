@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Exp4</title>
+</head>
+
+<body>
+<pre><code>
+import spacy
+
+# Load a hypothetical medical dataset (replace with your dataset)
+medical_data = [
+    "Patient John Doe, aged 45, was diagnosed with Hypertension and is taking Medication A.",
+    "Jane Smith, 32 years old, has Diabetes and uses Insulin for treatment.",
+    "Robert Johnson, 50 years old, is suffering from Asthma and uses an Inhaler.",
+    "Mary Brown, 28, had heart surgery for her Heart Disease.",
+    "David White, 60, is undergoing Chemotherapy for Cancer."
+]
+
+# Load the spaCy NER model
+nlp = spacy.load("en_core_web_sm")
+
+# Extract medical entities from the dataset
+for text in medical_data:
+    doc = nlp(text)
+    entities = [(ent.text, ent.label_) for ent in doc.ents]
+    if entities:
+        print("Entities extracted from the text:")
+        for entity, label in entities:
+            print(f"{label}: {entity}")
+
+</pre></code>
+</body>
+
+</html>

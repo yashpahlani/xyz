@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>exp1</title>
+</head>
+
+<body>
+<pre><code>
+
+
+import numpy as np
+import pandas as pd
+
+
+patientDemographics =  pd.read_csv('Patient Demographics.csv')
+patientDemographics.set_index("Patient ID", inplace=True)
+
+patientDemographics.info()
+
+patientDemographics.isnull().sum()
+
+Data Preprocessing - Fill missing age values.
+
+Data Validation - Age can't be negative.
+
+
+
+
+import datetime
+def calculateAge(dob):
+  if datetime.date.fromisoformat(dob) > datetime.date.today():
+    raise ValueError('Please check Date-of-Birth.')
+  return datetime.date.today().year - datetime.date.fromisoformat(dob).year
+
+
+patientDemographics['Age'] = patientDemographics['Date of Birth'].apply(calculateAge)
+
+patientDemographics.head()
+
+
+
+Diagnoses = pd.read_csv('Diagnoses.csv')
+Diagnoses.set_index("Diagnosis ID", inplace=True)
+Medication = pd.read_csv('Medication.csv')
+Medication.set_index("Medication ID", inplace=True)
+labTests = pd.read_csv('Laboratory Test Results.csv')
+labTests.set_index("Lab Test ID", inplace=True)
+
+Diagnoses.head()
+
+Medication.head()
+
+labTests.head()
+
+print("Diagnoses")
+Diagnoses.info()
+print("")
+print("Medication")
+Medication.info()
+print("")
+print("Lab Tests")
+labTests.info()
+
+Diagnoses.isnull().sum()
+
+Medication.isnull().sum()
+
+labTests.isnull().sum()
+
+Diagnoses.dropna(inplace=True)
+Medication.dropna(inplace=True)
+labTests.dropna(inplace=True)
+
+
+ptDemo = patientDemographics.drop(['Address', 'Date of Birth', 'Contact Number', 'Email'], axis=1)
+ptDemoWithDoB = patientDemographics.drop(['Address', 'Contact Number', 'Email'], axis=1)
+
+
+
+patientDiagnoses = pd.merge(ptDemo, Diagnoses, on='Patient ID', how='inner')
+patientDiagnoses.head()
+
+patientMedication = pd.merge(ptDemo, Medication, on='Patient ID', how='inner')
+patientMedication.head()
+
+patientLabTests = pd.merge(ptDemoWithDoB, labTests, on='Patient ID', how='inner')
+patientLabTests.head()
+
+
+
+
+
+Diagnoses['Date of Diagnosis'] = Diagnoses['Date of Diagnosis'].astype('datetime64[ns]')
+Medication['Start Date'] = Medication['Start Date'].astype('datetime64[ns]')
+Medication['End Date'] = Medication['End Date'].astype('datetime64[ns]')
+labTests['Date of Test'] = labTests['Date of Test'].astype('datetime64[ns]')
+
+
+
+patientLabTests['Age at Time of Test'] = (patientLabTests['Date of Test'].astype('datetime64[ns]')
+                                        - patientLabTests['Date of Birth'].astype('datetime64[ns]'))
+patientLabTests['Age at Time of Test'] = (patientLabTests['Age at Time of Test']/np.timedelta64(1, 'Y')).astype('int')
+patientLabTests.drop(['Date of Birth'], axis=1)
+</pre></code>
+</body>
+
+</html>
